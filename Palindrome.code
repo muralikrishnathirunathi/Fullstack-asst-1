@@ -1,0 +1,29 @@
+package main
+
+import "fmt"
+
+func isPalindrome(s string) bool {
+	for i := 0; i < len(s)/2; i++ {
+		if s[i] != s[len(s)-1-i] {
+			return false
+		}
+	}
+	return true
+}
+
+func main() {
+	test1 := "racecar"
+	test2 := "krishna"
+
+	if isPalindrome(test1) {
+		fmt.Printf("%s is a palindrome.\n", test1)
+	} else {
+		fmt.Printf("%s is not a palindrome.\n", test1)
+	}
+
+	if isPalindrome(test2) {
+		fmt.Printf("%s is a palindrome.\n", test2)
+	} else {
+		fmt.Printf("%s is not a palindrome.\n", test2)
+	}
+}
