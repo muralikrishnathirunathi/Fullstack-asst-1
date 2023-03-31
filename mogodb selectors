@@ -1,0 +1,101 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+const uri = "mongodb://localhost:27017//?maxPoolSize=20&w=majority"
+
+type movie struct {
+	Title     string   `bson:"title"`
+	Runtime   int      `bson:"runtime"`
+	Year      int      `bson:"year"`
+	Countries []string `bson:"countries"`
+	Imdb      struct {
+		Rating float64 `bson:"rating"`
+	} `bson:"imdb"`
+}
+
+func connect() (*mongo.Client, error) {
+	client, err := mongo.NewClient(options.Client().ApplyURI(uri))
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err = client.Connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func disconnect(client *mongo.Client) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return client.Disconnect(ctx)
+}
+
+func getAllMovies(client *mongo.Client) ([]movie, error) {
+	var movies []movie
+
+	coll := client.Database("db2").Collection("collection2")
+
+	filter := bson.D{{}}
+	cur, err := coll.Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(context.Background())
+
+	for cur.Next(context.Background()) {
+		var m movie
+		err := cur.Decode(&m)
+		if err != nil {
+			return nil, err
+		}
+		movies = append(movies, m)
+	}
+
+	return movies, nil
+}
+
+func getMovie(client *mongo.Client, title string) (movie, error) {
+	var m movie
+
+	coll := client.Database("db2").Collection("collection2")
+
+	filter := bson.D{{"title", title}}
+	err := coll.FindOne(context.Background(), filter).Decode(&m)
+	if err != nil {
+		return movie{}, err
+	}
+
+	return m, nil
+}
+
+func getMoviesByRuntime(client *mongo.Client, maxRuntime int) ([]movie, error) {
+	var movies []movie
+
+	coll := client.Database("db2").Collection("collection2")
+
+	filter := bson.D{{"runtime", bson.D{{"$lte", maxRuntime}}}}
+	cur, err := coll.Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(context.Background())
+
+	for cur.Next(context.Background()) {
+		var m movie
+		err := cur.Decode(&m
